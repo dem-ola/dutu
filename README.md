@@ -3,7 +3,7 @@ the little todo app for big plans
 
 Dutu is a lightweight todo browser app written in React and native Javascript. Todo items are created in a straightforward  GUI and saved to a JSON file stored in the browser's local storage.
 
-Installation\
+Installation
 1. Clone the repository OR
     
    If you're feeling brave you can zip all the files using 
@@ -21,9 +21,9 @@ Each todo item:\
 Edit - Click to edit item text\
 Delete - this will delete the todo item after a warning\
 Done checkbox - click to indicate item done; will add a 'finished' date (default: now) to the item row\
-add. <date> - date item created\
-fin. <date> - date item completed\
-<number>d - days since added or completed if finsished 
+add. date - date item created\
+fin. date - date item completed\
+number d - days since added or completed if finsished 
 
 There's no app Save button: everything is saved as you go along
 
