@@ -191,6 +191,7 @@ class ToDoItem extends React.Component {
         if (!this.state.editing) {
             // enable input and set css/flags
             inp.removeAttribute('disabled');
+            inp.focus();
             editClassName(e.target, 'item-confirm-highlight', 'add');
             editClassName(inp, 'todo-editing', 'add');
             this.setState({editing: true});

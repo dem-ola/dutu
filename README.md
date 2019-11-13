@@ -9,7 +9,10 @@ Installation
    If you're feeling brave you can zip all the files using 
 http://github.com/dem-ola/dutu//zipball/master/ and then rename or move the folder if you want.
 
-2. Open the dutu.html file in the folder from your browser.\
+2. IMPORTANT: Disable Cross-Origin restrictions\
+   In Safari you do this in the Develop menu
+
+3. Open the dutu.html file in the folder from your browser.\
    The first time you open this you should have an Input box and two buttons: Add New and Clear List
 
 Use\
