@@ -1,9 +1,10 @@
 'use strict';
-
 //////////////////////////////
 const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
 //////////////////////////////
 
+
+let version = 0.12
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 var dutuData;
@@ -170,9 +171,7 @@ class Categories extends React.Component {
     constructor(props) {
         super(props)
         this.handleChange = this.handleChange.bind(this)
-        this.state = {
-            //value: this.props.categories[0], // default
-        }
+        this.state = ({}) // empty but created so ref to this.state can work
     }
 
     componentDidMount() {
@@ -184,7 +183,6 @@ class Categories extends React.Component {
         }
     }
 
-  
     handleChange(e) {
         this.setState({value: e.target.value});
         this.props.onChange();
@@ -226,14 +224,9 @@ class ToDoItem extends React.Component {
             finished: props.taskie.finished,
             done: props.taskie.done,
             categories: props.data.categories,
+            pending: daysSince(props.taskie.added, props.taskie.finished),
+            catId: 'item-category-'+props.objKey,
         }
-    }
-
-    componentDidMount() {
-        this.setState({
-            pending: daysSince(this.state.added, this.state.finished),
-            catId: 'item-category-'+this.state.key
-        })
     }
 
     handleDone(e) {
@@ -431,17 +424,11 @@ class List extends React.Component {
         this.handleEditCat = this.handleEditCat.bind(this);
         this.handleFilterCat = this.handleFilterCat.bind(this);
         this.state = {
-            theList: '',
+            theList: <LoadList 
+                        data={this.props.data}
+                        handleDelete={this.handleDelete} />,
             keys: Object.keys(props.data.tasks), // get keys so we can loop
         }
-    }
-
-    componentDidMount() {
-        this.setState({
-            theList : <LoadList 
-                data={this.props.data}
-                handleDelete={this.handleDelete} />,
-        })
     }
 
     componentDidUpdate(prevProps) {
@@ -509,7 +496,7 @@ class List extends React.Component {
         let cats_ = this.props.data.categories.slice(2)
         cats_ = cats_.join(', ');
 
-        let edited = prompt('Create a new category. Separate multiples with commas.\n\n'  +
+        let edited = prompt('Create a new category. Separate multiples with commas.\n\n'  + 
                             'If you rename an existing Category\n' + 
                             'you will have to re-categorise affected items', cats_);
 
@@ -564,7 +551,7 @@ class List extends React.Component {
                 <div id='above'>
                     <InputBox
                         id='item-box'
-                        place='Add new todo'
+                        place='Add new todo item'
                     />
                     <Btn 
                         id='add-new'
@@ -586,7 +573,7 @@ class List extends React.Component {
                         handle={this.handleEditCat}
                     />
 
-                    <span id='cat-filter-label'>Filter =></span>
+                    <span id='cat-filter-label'>Filter:</span>
                     <Categories id='cat-filter' 
                         categories={this.props.data.categories} 
                         onChange={this.handleFilterCat}
@@ -604,7 +591,7 @@ class ToDo extends React.Component {
     render() {
         return (
         <div>
-            <div id='app-name'>Dutu
+            <div id='app-name'>Dutu<span id='version'>{version}</span>
                 <span id='app-byline'>the todo app for big plans</span>
             </div>
             <div id='me'> {this.props.data.me} Todo List </div>

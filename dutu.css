@@ -2,31 +2,37 @@
     font-family: 'Open Sans', sans-serif;
     position: absolute;
     top: 5%;
+    left: 2%;
     width: 1100px;
 }
 
 #app-name {
     font-family: 'Pacifico', cursive;
-    font-size: 50px;
+    font-size: 3rem;
     color: #2E4B52;
 }
 
+#version {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.9rem;
+    margin-left: 2px;
+}
+
 #app-byline {
-    font-size: 25px;
+    font-size: 1.5rem;
     margin-left: 15px;
 }
 
 #me {
-    font-size: 20px;
-    font-weight: 600;
+    font-size: 1.25rem;
     color: #2E4B52;
 }
 
 #table {
     border-radius: 9px;
-    border: 1px solid #2E4B52;
-    margin-top: 12px;
-    padding: 3%;
+    border: 0.05rem solid #2E4B52;
+    margin-top: 8px;
+    padding: 3% 2% 3% 2%;
 }
 
 #todo-table{
@@ -44,7 +50,7 @@
     height: 20px;
     width: 325px;
     left: 3%;
-    font-size: 15px;
+    font-size: 0.9rem;
     font-weight: 300;
 }
 
@@ -66,7 +72,7 @@
 
 #cat-filter-label {
     margin-left: 24px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 #cat-filter {
@@ -83,6 +89,7 @@
 .item-id {
     display: inline-block;
     width: 15px;
+    font-size: 0.8rem;
 }
 
 .item-obj-key {
@@ -94,7 +101,7 @@
     position: relative;
     border: none;
     border-radius: 3px;
-    font-size: 15px;
+    font-size: 0.9rem;
     font-weight: 300;
     width: 300px;
     background-color: #E0E7E9;
@@ -126,7 +133,7 @@
     display: inline-block;
     min-width: 50px;
     text-align: right;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
 }
 
 .item-done {
