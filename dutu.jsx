@@ -1,11 +1,15 @@
 'use strict';
 
+//////////////////////////////
+const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
+//////////////////////////////
 
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
 var dutuData;
 var dutuJSON;
+var defaultCategories = ['All', 'General'];
+var defaultCategory = 'General';
 
 // retrieve
 dutuData = retrieveDutu();
@@ -13,6 +17,7 @@ if (dutuData == null) {
     // doesn't exist; make new blank and then open
   dutuData = { 
     "me" : "My",
+    "categories": defaultCategories, // default
     "tasks" : {}
   }
   saveDutu(dutuData);
@@ -21,15 +26,50 @@ if (dutuData == null) {
 
 function retrieveDutu() {
     // get JSON file or return null
-    let obj = localStorage.getItem("dutuJSON");
+    let obj = localStorage.getItem(fPrefix+"JSON");
     obj = (obj == null || obj == 'undefined') ? null : obj;
     if (obj == null) return obj
-    return JSON.parse(obj);
+    
+    obj = JSON.parse(obj);
+    
+    // checks
+    // if no categories node; add default
+    let keys = Object.keys(obj);
+    if (keys.indexOf('categories') == -1) {
+        obj['categories'] = defaultCategories;
+    }
+
+    let tasks = obj.tasks;
+    for (let t in tasks) {
+         // set to default if if task has no category
+        if (!tasks[t].hasOwnProperty('category')) {
+            tasks[t].category = defaultCategory;
+        }
+        // if blank then set to default
+        if (tasks[t].category.trim() == '') {
+            tasks[t].category = defaultCategory;
+        }
+        // add category to categories if not in categories node
+        if (obj.categories.indexOf(tasks[t].category) == -1) {
+            obj.categories.push(tasks[t].category)            
+        }
+        // remove blanks
+        obj.categories = obj.categories.filter((cat)=>cat.trim() != '');
+    }
+    return obj;
 }
 
 function saveDutu(data) {
+    // checks
+    //1. each task has a category; if not set to default
+    let tasks = data.tasks;
+    for (let t in tasks) {
+        if (typeof tasks[t].category != 'string') {
+            tasks[t].category = defaultCategory;
+        }
+    }
     dutuJSON = JSON.stringify(data);
-    localStorage.setItem("dutuJSON", dutuJSON);
+    localStorage.setItem(fPrefix+"JSON", dutuJSON);
 }
 
 function editClassName(elem, cname, action) {
@@ -63,10 +103,15 @@ function daysSince(dateText, fin=null) {
     return parseInt((now-then) / (1000 * 60 * 60 * 24))+'d'
 }
 
+// add capitalize method to String prototype
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1)
+  }
+
 
 ////////////////////
 
-const InputBox = props => {
+const InputBox = props =>  {
     return (
         <input
             type='text'
@@ -78,7 +123,7 @@ const InputBox = props => {
             onChange={props.handle}
         />
     )
-}
+};
 
 const Btn = props => {
     return (
@@ -121,13 +166,55 @@ const CheckBox = props => {
     }
 }
 
+class Categories extends React.Component {
+    constructor(props) {
+        super(props)
+        this.handleChange = this.handleChange.bind(this)
+        this.state = {
+            //value: this.props.categories[0], // default
+        }
+    }
+
+    componentDidMount() {
+        this.setState({value: this.props.categories[0]})
+        if (this.props.todoitem) { // so not the filter categories select
+            if (this.props.task.category != undefined) {
+                this.setState({value: this.props.task.category}); // reset if existing
+            }
+        }
+    }
+
+  
+    handleChange(e) {
+        this.setState({value: e.target.value});
+        this.props.onChange();
+    }
+ 
+    render() {
+        let cats_ = [];
+        let len = this.props.categories.length; // to avoid undefined
+        for (let i=0; i<len; i++) {
+            cats_.push(<option key={i} value={this.props.categories[i]}>{this.props.categories[i]}</option>)
+        }
+
+        return (
+            <select 
+                id={this.props.id}
+                className={this.props.className}
+                value={this.state.value} 
+                onChange={this.handleChange}>
+                    {cats_}
+            </select>
+        )
+    }
+}
 
 class ToDoItem extends React.Component {   
     constructor(props) {
         super(props)
         this.handleEdit = this.handleEdit.bind(this);
         this.handleDone = this.handleDone.bind(this);
-
+        this.handleChangeCat = this.handleChangeCat.bind(this);
         this.state = {
             item: props.taskie,
             todo: props.taskie.task,
@@ -138,12 +225,14 @@ class ToDoItem extends React.Component {
             added: props.taskie.added,
             finished: props.taskie.finished,
             done: props.taskie.done,
+            categories: props.data.categories,
         }
     }
 
     componentDidMount() {
         this.setState({
-            pending: daysSince(this.state.added,this.state.finished),
+            pending: daysSince(this.state.added, this.state.finished),
+            catId: 'item-category-'+this.state.key
         })
     }
 
@@ -218,6 +307,12 @@ class ToDoItem extends React.Component {
         }         
     }
 
+    handleChangeCat() {
+        let id_ = this.state.catId;
+        this.props.data.tasks[this.state.key].category = document.querySelector('#'+id_).value;
+        saveDutu(this.props.data);
+    }
+
     render() {
         // props if item done already
         let boxcname = "item-todo";
@@ -231,6 +326,9 @@ class ToDoItem extends React.Component {
             prefixFin = 'fin.'
         }
 
+        // categories for items: exclude 'All'
+        let itemCategories = this.props.data.categories.slice(1,)
+       
         return ( 
             <div id={this.props.id} className={this.props.cname}>
                 <span className="item-id">
@@ -244,7 +342,17 @@ class ToDoItem extends React.Component {
                     disabled={true}
                     value={this.state.todo}
                     done={this.state.done}
-                />    
+                /> 
+
+                <Categories
+                    id={this.state.catId}
+                    className='item-category'
+                    categories={itemCategories}
+                    todoitem={true} // flag
+                    task={this.props.data.tasks[this.state.key]}
+                    data={this.props.data}
+                    onChange={this.handleChangeCat}
+                />
 
                 <Btn 
                     className="item-edit" 
@@ -287,6 +395,17 @@ const LoadList = (props) => {
 
     for (let i=0; i<keys.length; i++) {
         let k = keys[i];
+
+        // check if we need to filter
+        // nb. props.selected is undefined at first load
+        if (props.selected != undefined && props.selected != 'All') { 
+            // task category may be undefined if not initially assigned
+            // probably not necessary once General is assigned as default on creation
+            let category = (tasks[k].category == undefined) ? defaultCategory : tasks[k].category
+            if (category != props.selected) {
+                continue;
+            }
+        }
         rows.push(
             <ToDoItem key={k}
                 id={'row-'+(i+1)}   // css id as well as shown row number
@@ -309,9 +428,11 @@ class List extends React.Component {
         this.handleAdd = this.handleAdd.bind(this);
         this.handleClear = this.handleClear.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
+        this.handleEditCat = this.handleEditCat.bind(this);
+        this.handleFilterCat = this.handleFilterCat.bind(this);
         this.state = {
             theList: '',
-            keys: Object.keys(props.data.tasks) // get keys so we can loop
+            keys: Object.keys(props.data.tasks), // get keys so we can loop
         }
     }
 
@@ -319,16 +440,17 @@ class List extends React.Component {
         this.setState({
             theList : <LoadList 
                 data={this.props.data}
-                handleDelete={this.handleDelete} />
+                handleDelete={this.handleDelete} />,
         })
     }
 
     componentDidUpdate(prevProps) {
         if (this.props !== prevProps) {
+            // reset this so it can be reloaded eg when categories change etc
             this.setState({
                 theList : <LoadList 
                     data={this.props.data}
-                    handleDelete={this.handleDelete} />
+                    handleDelete={this.handleDelete} />,
             })
         }
     }
@@ -382,6 +504,49 @@ class List extends React.Component {
         }
     }
 
+    handleEditCat() {
+        let cats = this.props.data.categories.slice(0,2)
+        let cats_ = this.props.data.categories.slice(2)
+        cats_ = cats_.join(', ');
+
+        let edited = prompt('Create a new category. Separate multiples with commas.\n\n'  +
+                            'If you rename an existing Category\n' + 
+                            'you will have to re-categorise affected items', cats_);
+
+        if (edited != cats_) {
+            let newCats = edited.split(',');
+            
+            newCats = newCats.map( (c) => c.trim().capitalize());
+            newCats = cats.concat(newCats);
+
+            // iterate through tasks and set to default if category not in new list
+            // this is strict - so must be exact spelling 
+            let tasks = this.props.data.tasks;
+            for (let t in tasks) {
+                if (newCats.indexOf(tasks[t].category) == -1) {
+                    tasks[t].category = defaultCategory;
+                }
+            }
+
+            // save new categories
+            this.props.data.categories = newCats
+            saveDutu(this.props.data);
+        }
+        this.componentDidUpdate();
+    }
+
+    // this is hereso we can filter the list
+    // can't really do it inside Categories component
+    handleFilterCat() {
+        let selected = document.querySelector('#cat-filter').value;
+        this.setState({
+            theList : <LoadList 
+                data={this.props.data}
+                selected={selected}
+                handleDelete={this.handleDelete} />,
+        });
+    }
+
     handleDelete(e) {
         let par = e.target.parentElement;
         let key = par.querySelector('.item-obj-key').textContent;
@@ -403,14 +568,30 @@ class List extends React.Component {
                     />
                     <Btn 
                         id='add-new'
+                        className='above-btn'
                         txt='Add New' 
                         handle={this.handleAdd}
                     />
                     <Btn 
                         id='clear-list'
+                        className='above-btn'
                         txt='Clear List' 
                         handle={this.handleClear}
                     />
+
+                    <Btn 
+                        id='cat-edit'
+                        className='above-btn'
+                        txt='Edit Categories' 
+                        handle={this.handleEditCat}
+                    />
+
+                    <span id='cat-filter-label'>Filter =></span>
+                    <Categories id='cat-filter' 
+                        categories={this.props.data.categories} 
+                        onChange={this.handleFilterCat}
+                    />
+
                 </div>
                 {this.state.theList}
             </div>
@@ -419,6 +600,7 @@ class List extends React.Component {
 }
 
 class ToDo extends React.Component {
+    
     render() {
         return (
         <div>

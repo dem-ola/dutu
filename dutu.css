@@ -2,7 +2,7 @@
     font-family: 'Open Sans', sans-serif;
     position: absolute;
     top: 5%;
-    width: 975px;
+    width: 1100px;
 }
 
 #app-name {
@@ -48,7 +48,7 @@
     font-weight: 300;
 }
 
-#add-new, #clear-list {
+.above-btn {
     vertical-align: top;
     width: 75px;
     margin-left: 30px;
@@ -57,6 +57,22 @@
     border: 0.05em solid black;
     border-radius: 3px;
     cursor: pointer;
+}
+
+#cat-edit {
+    width: 110px;
+    margin-left: 60px;
+}
+
+#cat-filter-label {
+    margin-left: 24px;
+    font-size: 0.8rem;
+}
+
+#cat-filter {
+    width: 110px;
+    height: 52px;
+    margin-left: 6px;
 }
 
 .item-row {
@@ -86,6 +102,11 @@
     margin-left: 6px;
     padding-left: 6px;
     margin-bottom: 3px;
+}
+
+.item-category {
+    margin-left: 18px;
+    width: 100px;
 }
 
 .item-date {
@@ -121,7 +142,7 @@
 
 .item-edit {
     width: 60px;
-    margin-left: 24px;
+    margin-left: 12px;
     border: 0.05em solid;
     border-radius: 2px;
     background-color: white;
