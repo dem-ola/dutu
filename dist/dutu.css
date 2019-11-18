@@ -105,10 +105,58 @@
     font-weight: 300;
     width: 300px;
     background-color: #E0E7E9;
-    height: 24px;
+    height: 28px;
     margin-left: 6px;
     padding-left: 6px;
     margin-bottom: 3px;
+    z-index: -1;
+}
+
+.item-todo-box {
+    display: inline-block;
+}
+
+.item-notes-btn {
+    margin-left: -50px;
+    background-color: #E0E7E9;
+    border: 0.05em solid #2E4B52;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.item-notes-btn:hover {
+    color: #FFF;
+    background-color: #2E4B52;
+}
+
+.item-notes-wrap {
+    margin-left: 6px;
+    width: 300px;
+    display: none;
+    position: absolute; /* keeps wrap floating above lower stuff */
+}
+
+.item-notes {
+    padding: 3%;
+    width: 96%; /* 100 - padding both sides - 2% */
+    height: 175px;
+    resize: none;
+    background-color: rgb(240,240,240);
+    border: 1px solid #2E4B52;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    z-index: -1;
+}
+
+.item-notes-selected {
+    display: block;
+}
+
+.item-notes-btn-save {
+    position: absolute; /* need to psition inside box */
+    margin-left: 260px;
+    margin-top: -35px;
+    z-index: 1;
 }
 
 .item-category {

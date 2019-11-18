@@ -19,13 +19,14 @@ http://github.com/dem-ola/dutu//zipball/master/ and then rename or move the fold
    - an Edit Categories button and a dropdown box for filtering categories
 
 Use\
-The input box - type in new todo items\
+The input box for new items - type in new todo items\
 Add New - click to create and add a new item\
 Clear List - this will delete all items after a warning\
 Edit Categories - add new categories here\
 Filter - filter todo list by category
 
 Each todo item:\
+'Notes' - click to get a popup box for notes. 'Save' or 'Close' to save without saving.
 Category - default is 'General' on creation. Change this after adding new Categories. 
 Edit - Click to edit item text\
 Delete - this will delete the todo item after a warning\
@@ -34,8 +35,7 @@ add. date - date item created\
 fin. date - date item completed\
 number d - days since added or completed if finsished 
 
-There's no app Save button: everything is saved as you go along.
-
+There's no overall Save button: everything is saved as you go along.
 
 Future\
 I have more ideas for Dutu and will add to it over time.

@@ -1,19 +1,16 @@
 'use strict';
-//////////////////////////////
-const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
-//////////////////////////////
 
+import {retrieveDutu, saveDutu} from './fromtojson.jsx';
 
-let version = 0.12
+let version = 0.13
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 var dutuData;
-var dutuJSON;
 var defaultCategories = ['All', 'General'];
 var defaultCategory = 'General';
 
 // retrieve
-dutuData = retrieveDutu();
+dutuData = retrieveDutu(defaultCategories, defaultCategory);
 if (dutuData == null) {
     // doesn't exist; make new blank and then open
   dutuData = { 
@@ -21,56 +18,8 @@ if (dutuData == null) {
     "categories": defaultCategories, // default
     "tasks" : {}
   }
-  saveDutu(dutuData);
-  retrieveDutu();  
-}
-
-function retrieveDutu() {
-    // get JSON file or return null
-    let obj = localStorage.getItem(fPrefix+"JSON");
-    obj = (obj == null || obj == 'undefined') ? null : obj;
-    if (obj == null) return obj
-    
-    obj = JSON.parse(obj);
-    
-    // checks
-    // if no categories node; add default
-    let keys = Object.keys(obj);
-    if (keys.indexOf('categories') == -1) {
-        obj['categories'] = defaultCategories;
-    }
-
-    let tasks = obj.tasks;
-    for (let t in tasks) {
-         // set to default if if task has no category
-        if (!tasks[t].hasOwnProperty('category')) {
-            tasks[t].category = defaultCategory;
-        }
-        // if blank then set to default
-        if (tasks[t].category.trim() == '') {
-            tasks[t].category = defaultCategory;
-        }
-        // add category to categories if not in categories node
-        if (obj.categories.indexOf(tasks[t].category) == -1) {
-            obj.categories.push(tasks[t].category)            
-        }
-        // remove blanks
-        obj.categories = obj.categories.filter((cat)=>cat.trim() != '');
-    }
-    return obj;
-}
-
-function saveDutu(data) {
-    // checks
-    //1. each task has a category; if not set to default
-    let tasks = data.tasks;
-    for (let t in tasks) {
-        if (typeof tasks[t].category != 'string') {
-            tasks[t].category = defaultCategory;
-        }
-    }
-    dutuJSON = JSON.stringify(data);
-    localStorage.setItem(fPrefix+"JSON", dutuJSON);
+  saveDutu(dutuData, defaultCategory);
+  retrieveDutu(defaultCategories, defaultCategory);  
 }
 
 function editClassName(elem, cname, action) {
@@ -125,6 +74,20 @@ const InputBox = props =>  {
         />
     )
 };
+
+const NotesBox = props =>  {
+    return (
+        <textarea
+            type='text'
+            id={props.id} 
+            className={props.className}
+            placeholder={props.placeholder}
+            maxLength={props.maxlength}
+            defaultValue={props.value}
+        />
+    )
+};
+
 
 const Btn = props => {
     return (
@@ -213,9 +176,13 @@ class ToDoItem extends React.Component {
         this.handleEdit = this.handleEdit.bind(this);
         this.handleDone = this.handleDone.bind(this);
         this.handleChangeCat = this.handleChangeCat.bind(this);
+        this.handleNotesOpen = this.handleNotesOpen.bind(this);
+        this.handleNotesSave = this.handleNotesSave.bind(this);
         this.state = {
             item: props.taskie,
             todo: props.taskie.task,
+            notes: props.taskie.notes,
+            notesPlaceholder: 'Write here',
             key: props.objKey,
             confirm: 'Confirm',
             edit: 'Edit',
@@ -261,7 +228,7 @@ class ToDoItem extends React.Component {
             this.props.data.tasks[this.state.key].done = false;
         }
         this.props.data.tasks[this.state.key].finished = finDate;
-        saveDutu(this.props.data);
+        saveDutu(this.props.data, defaultCategory);
     }
 
     handleEdit(e) {
@@ -285,7 +252,7 @@ class ToDoItem extends React.Component {
                     // update data object, convert to JSON and save
                     this.setState({todo: inp.value});
                     this.props.data.tasks[this.state.key].task = inp.value;
-                    saveDutu(this.props.data);
+                    saveDutu(this.props.data, defaultCategory);
                 } else {
                     inp.value = this.state.todo; // set back to former
                 }
@@ -300,10 +267,42 @@ class ToDoItem extends React.Component {
         }         
     }
 
+    handleNotesOpen(e) {
+        let par = e.target.parentElement;
+        let notesWrap = par.querySelector('.item-notes-wrap');
+        let notes = par.querySelector('.item-notes');
+        if (e.target.className.indexOf('item-notes-opened') == -1) { // box not open
+            e.target.textContent = 'Close';
+            editClassName(e.target, 'item-notes-opened', 'add');
+            editClassName(notesWrap, 'item-notes-selected', 'add')
+        } else { // box already open so close: note no saving!
+            e.target.textContent = 'Notes';
+            notes.value = this.state.notes || '';
+            editClassName(e.target, 'item-notes-opened', 'remove');
+            editClassName(notesWrap, 'item-notes-selected', 'remove')
+        }
+    }
+
+    handleNotesSave(e) {
+        let par = e.target.parentElement.parentElement;
+        let btn = par.querySelector('.item-notes-btn-open');
+        btn.textContent = 'Notes';
+
+        // save data
+        let notes_written = par.querySelector('.item-notes').value;
+        this.setState({notes: notes_written})
+        this.props.data.tasks[this.state.key].notes = notes_written;
+        saveDutu(this.props.data, defaultCategory);
+
+        // close box
+        let notes = par.querySelector('.item-notes-wrap');
+        editClassName(notes, 'item-notes-selected', 'remove')
+    }
+
     handleChangeCat() {
         let id_ = this.state.catId;
         this.props.data.tasks[this.state.key].category = document.querySelector('#'+id_).value;
-        saveDutu(this.props.data);
+        saveDutu(this.props.data, defaultCategory);
     }
 
     render() {
@@ -330,12 +329,33 @@ class ToDoItem extends React.Component {
                 <span className="item-obj-key">
                     {this.props.objKey}</span>         
                 
-                <InputBox
-                    className={boxcname}
-                    disabled={true}
-                    value={this.state.todo}
-                    done={this.state.done}
-                /> 
+                <div className='item-todo-box'>
+                    <InputBox
+                        className={boxcname}
+                        disabled={true}
+                        value={this.state.todo}
+                        done={this.state.done}
+                    />
+
+                    <Btn 
+                        className="item-notes-btn item-notes-btn-open" 
+                        txt='Notes' 
+                        handle={this.handleNotesOpen}
+                        disabled={disableBtn} />  
+
+                    <div className='item-notes-wrap'>
+                        <NotesBox 
+                            className="item-notes" 
+                            maxlength='500'
+                            placeholder={this.state.notesPlaceholder}
+                            value={this.state.notes}/>
+                        
+                        <Btn 
+                            className="item-notes-btn item-notes-btn-save" 
+                            txt='Save' 
+                            handle={this.handleNotesSave} />  
+                    </div>
+                </div>
 
                 <Categories
                     id={this.state.catId}
@@ -470,7 +490,7 @@ class List extends React.Component {
             newKey = keys_.reduce((a,b)=>Math.max(a,b)) + 1;
         }
         this.props.data['tasks'][newKey] = newTask;
-        saveDutu(this.props.data);
+        saveDutu(this.props.data, defaultCategory);
         
         // update shown list and keys
         keys_.push(newKey);
@@ -486,7 +506,7 @@ class List extends React.Component {
         let confirmed = confirm("Clear your entire list\nWarning: This action cannot be reversed");
         if (confirmed) {
             this.props.data['tasks'] = {}
-            saveDutu(this.props.data);
+            saveDutu(this.props.data, defaultCategory);
             this.componentDidUpdate();
         }
     }
@@ -517,7 +537,7 @@ class List extends React.Component {
 
             // save new categories
             this.props.data.categories = newCats
-            saveDutu(this.props.data);
+            saveDutu(this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -540,7 +560,7 @@ class List extends React.Component {
         let confirmed = confirm("Delete this task?");
         if (confirmed) {          
             delete this.props.data.tasks[key];
-            saveDutu(this.props.data);
+            saveDutu(this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -587,7 +607,6 @@ class List extends React.Component {
 }
 
 class ToDo extends React.Component {
-    
     render() {
         return (
         <div>
