@@ -2,7 +2,7 @@
 
 import {retrieveDutu, saveDutu} from './fromtojson.jsx';
 
-let version = 0.13
+let version = 0.14
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 var dutuData;
@@ -277,7 +277,7 @@ class ToDoItem extends React.Component {
             editClassName(notesWrap, 'item-notes-selected', 'add')
         } else { // box already open so close: note no saving!
             e.target.textContent = 'Notes';
-            notes.value = this.state.notes || '';
+            notes.value = this.state.notes || this.state.notesPlaceholder;
             editClassName(e.target, 'item-notes-opened', 'remove');
             editClassName(notesWrap, 'item-notes-selected', 'remove')
         }
@@ -405,9 +405,22 @@ const LoadList = (props) => {
     let tasks = props.data.tasks;
     let keys = Object.keys(tasks); // get keys so we can loop
     let rows = []
+    let order = {}
+    let restack = props.data.restack
 
+    // we don't want to disturb the object - so no reordering
+    // we'll instead map listorders to their object keys
     for (let i=0; i<keys.length; i++) {
         let k = keys[i];
+        order[tasks[k].order] = k;
+    }
+
+    // create items; nb keys.lengths used as conveniently gives task count
+    for (let i=0; i<keys.length; i++) {
+
+        // get underlying object key
+        // if to restack: use the order obj keys else use the tasks obj keys
+        let k = restack ? order[i] : keys[i];  
 
         // check if we need to filter
         // nb. props.selected is undefined at first load
@@ -420,10 +433,10 @@ const LoadList = (props) => {
             }
         }
         rows.push(
-            <ToDoItem key={k}
-                id={'row-'+(i+1)}   // css id as well as shown row number
+            <ToDoItem key={i}
+                id={'row-'+(parseInt(i)+1)}   // css id as well as shown row number
                 cname='item-row'
-                objKey={keys[i]}    // underlying object key
+                objKey={k}    // underlying object key
                 data={props.data}
                 taskie={tasks[k]}
                 handleDelete={props.handleDelete}
@@ -443,11 +456,15 @@ class List extends React.Component {
         this.handleDelete = this.handleDelete.bind(this);
         this.handleEditCat = this.handleEditCat.bind(this);
         this.handleFilterCat = this.handleFilterCat.bind(this);
+        this.handleRestack = this.handleRestack.bind(this);
         this.state = {
             theList: <LoadList 
                         data={this.props.data}
                         handleDelete={this.handleDelete} />,
             keys: Object.keys(props.data.tasks), // get keys so we can loop
+            listorder: this.props.data.listorder,
+            restack: this.props.data.restack,
+            stackText: this.props.data.restack ? 'Unstack' : 'Restack'
         }
     }
 
@@ -455,6 +472,7 @@ class List extends React.Component {
         if (this.props !== prevProps) {
             // reset this so it can be reloaded eg when categories change etc
             this.setState({
+                restack: this.props.data.restack,
                 theList : <LoadList 
                     data={this.props.data}
                     handleDelete={this.handleDelete} />,
@@ -479,6 +497,7 @@ class List extends React.Component {
         let newTask = {
             'task': inp.value,
             'added': date,
+            'order': ++this.state.listorder,
         }
 
         // add to database
@@ -494,7 +513,7 @@ class List extends React.Component {
         
         // update shown list and keys
         keys_.push(newKey);
-        this.setState({keys: keys_});
+        this.setState({keys: keys_, listorder: ++this.state.listorder});
         this.componentDidUpdate();
 
         // reset input box
@@ -564,6 +583,19 @@ class List extends React.Component {
         }
         this.componentDidUpdate();
     }
+
+    handleRestack(e) {
+        if (this.state.restack) {
+            this.props.data.restack = false;
+            e.target.textContent = 'Restack';
+        } else {
+            this.props.data.restack = true;
+            e.target.textContent = 'Unstack';
+        }
+        saveDutu(this.props.data, defaultCategory);
+        this.componentDidUpdate(); // updates button text
+        location.reload();
+    }
        
     render() {
         return (
@@ -599,6 +631,13 @@ class List extends React.Component {
                         onChange={this.handleFilterCat}
                     />
 
+                    <Btn 
+                        id='restack'
+                        className='above-btn'
+                        txt={this.state.stackText} 
+                        handle={this.handleRestack}
+                    />
+
                 </div>
                 {this.state.theList}
             </div>
@@ -615,7 +654,7 @@ class ToDo extends React.Component {
             </div>
             <div id='me'> {this.props.data.me} Todo List </div>
             <div id='table'>
-                 <List data={this.props.data}/>
+                 <List data={this.props.data} />
             </div>
         </div>
         )

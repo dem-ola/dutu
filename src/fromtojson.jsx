@@ -1,7 +1,7 @@
 'use strict';
 
 //////////////////////////////
-const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
+const fPrefix = 'data' // leave alone to not risk overwriting stored JSON
 //////////////////////////////
 
 export function retrieveDutu(defaultCategories, defaultCategory) {
@@ -13,11 +13,19 @@ export function retrieveDutu(defaultCategories, defaultCategory) {
     obj = JSON.parse(obj);
     
     // checks
-    // if no categories node; add default
     let keys = Object.keys(obj);
+    // if no categories node; add default - 0.13
     if (keys.indexOf('categories') == -1) {
         obj['categories'] = defaultCategories;
     }
+
+    if (keys.indexOf('restack') == -1) {
+        obj['restack'] = false;
+    }
+
+    // if no orders node; create one - 0.14  
+    // we always reset order on load in case things have changed
+    obj['listorder'] = -1;  
 
     let tasks = obj.tasks;
     for (let t in tasks) {
@@ -35,7 +43,19 @@ export function retrieveDutu(defaultCategories, defaultCategory) {
         }
         // remove blanks
         obj.categories = obj.categories.filter((cat)=>cat.trim() != '');
+        
+        // listorder: for restacking - we only do live tasks now
+        if (!tasks[t].done) {
+            tasks[t].order = ++obj.listorder;
+        } 
     }
+    // do record order for done tasks
+    for (let t in tasks) {
+        if (tasks[t].done) {
+            tasks[t].order = ++obj.listorder;
+        }
+    }
+
     return obj;
 }
 
