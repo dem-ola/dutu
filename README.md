@@ -23,7 +23,8 @@ The input box for new items - type in new todo items\
 Add New - click to create and add a new item\
 Clear List - this will delete all items after a warning\
 Edit Categories - add new categories here\
-Filter - filter todo list by category
+Filter - filter todo list by category\
+Restack - re-order list placing Done items at bottom. Unstack to reverse\
 
 Each todo item:\
 'Notes' - click to get a popup box for notes. 'Save' or 'Close' to save without saving.
