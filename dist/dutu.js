@@ -103,14 +103,20 @@ function retrieveDutu(defaultCategories, defaultCategory) {
   obj = obj == null || obj == 'undefined' ? null : obj;
   if (obj == null) return obj;
   obj = JSON.parse(obj); // checks
-  // if no categories node; add default
 
-  let keys = Object.keys(obj);
+  let keys = Object.keys(obj); // if no categories node; add default - 0.13
 
   if (keys.indexOf('categories') == -1) {
     obj['categories'] = defaultCategories;
   }
 
+  if (keys.indexOf('restack') == -1) {
+    obj['restack'] = false;
+  } // if no orders node; create one - 0.14  
+  // we always reset order on load in case things have changed
+
+
+  obj['listorder'] = -1;
   let tasks = obj.tasks;
 
   for (let t in tasks) {
@@ -130,7 +136,18 @@ function retrieveDutu(defaultCategories, defaultCategory) {
     } // remove blanks
 
 
-    obj.categories = obj.categories.filter(cat => cat.trim() != '');
+    obj.categories = obj.categories.filter(cat => cat.trim() != ''); // listorder: for restacking - we only do live tasks now
+
+    if (!tasks[t].done) {
+      tasks[t].order = ++obj.listorder;
+    }
+  } // do record order for done tasks
+
+
+  for (let t in tasks) {
+    if (tasks[t].done) {
+      tasks[t].order = ++obj.listorder;
+    }
   }
 
   return obj;
@@ -152,7 +169,7 @@ function saveDutu(data, defaultCategory) {
 
 
 
-let version = 0.13;
+let version = 0.14;
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 var dutuData;
 var defaultCategories = ['All', 'General'];
@@ -446,7 +463,7 @@ class dutu_ToDoItem extends React.Component {
     } else {
       // box already open so close: note no saving!
       e.target.textContent = 'Notes';
-      notes.value = this.state.notes || '';
+      notes.value = this.state.notes || this.state.notesPlaceholder;
       editClassName(e.target, 'item-notes-opened', 'remove');
       editClassName(notesWrap, 'item-notes-selected', 'remove');
     }
@@ -564,9 +581,20 @@ const LoadList = props => {
   let keys = Object.keys(tasks); // get keys so we can loop
 
   let rows = [];
+  let order = {};
+  let restack = props.data.restack; // we don't want to disturb the object - so no reordering
+  // we'll instead map listorders to their object keys
 
   for (let i = 0; i < keys.length; i++) {
-    let k = keys[i]; // check if we need to filter
+    let k = keys[i];
+    order[tasks[k].order] = k;
+  } // create items; nb keys.lengths used as conveniently gives task count
+
+
+  for (let i = 0; i < keys.length; i++) {
+    // get underlying object key
+    // if to restack: use the order obj keys else use the tasks obj keys
+    let k = restack ? order[i] : keys[i]; // check if we need to filter
     // nb. props.selected is undefined at first load
 
     if (props.selected != undefined && props.selected != 'All') {
@@ -580,11 +608,11 @@ const LoadList = props => {
     }
 
     rows.push(React.createElement(dutu_ToDoItem, {
-      key: k,
-      id: 'row-' + (i + 1) // css id as well as shown row number
+      key: i,
+      id: 'row-' + (parseInt(i) + 1) // css id as well as shown row number
       ,
       cname: "item-row",
-      objKey: keys[i] // underlying object key
+      objKey: k // underlying object key
       ,
       data: props.data,
       taskie: tasks[k],
@@ -603,13 +631,17 @@ class dutu_List extends React.Component {
     this.handleDelete = this.handleDelete.bind(this);
     this.handleEditCat = this.handleEditCat.bind(this);
     this.handleFilterCat = this.handleFilterCat.bind(this);
+    this.handleRestack = this.handleRestack.bind(this);
     this.state = {
       theList: React.createElement(LoadList, {
         data: this.props.data,
         handleDelete: this.handleDelete
       }),
-      keys: Object.keys(props.data.tasks) // get keys so we can loop
-
+      keys: Object.keys(props.data.tasks),
+      // get keys so we can loop
+      listorder: this.props.data.listorder,
+      restack: this.props.data.restack,
+      stackText: this.props.data.restack ? 'Unstack' : 'Restack'
     };
   }
 
@@ -617,6 +649,7 @@ class dutu_List extends React.Component {
     if (this.props !== prevProps) {
       // reset this so it can be reloaded eg when categories change etc
       this.setState({
+        restack: this.props.data.restack,
         theList: React.createElement(LoadList, {
           data: this.props.data,
           handleDelete: this.handleDelete
@@ -638,7 +671,8 @@ class dutu_List extends React.Component {
     let date = convertDateToText(now);
     let newTask = {
       'task': inp.value,
-      'added': date
+      'added': date,
+      'order': ++this.state.listorder
     }; // add to database
     // use this.props and not a this.state.data copy
     // so underlying data object is changed
@@ -655,7 +689,8 @@ class dutu_List extends React.Component {
 
     keys_.push(newKey);
     this.setState({
-      keys: keys_
+      keys: keys_,
+      listorder: ++this.state.listorder
     });
     this.componentDidUpdate(); // reset input box
 
@@ -727,6 +762,21 @@ class dutu_List extends React.Component {
     this.componentDidUpdate();
   }
 
+  handleRestack(e) {
+    if (this.state.restack) {
+      this.props.data.restack = false;
+      e.target.textContent = 'Restack';
+    } else {
+      this.props.data.restack = true;
+      e.target.textContent = 'Unstack';
+    }
+
+    saveDutu(this.props.data, defaultCategory);
+    this.componentDidUpdate(); // updates button text
+
+    location.reload();
+  }
+
   render() {
     return React.createElement("div", null, React.createElement("div", {
       id: "above"
@@ -754,6 +804,11 @@ class dutu_List extends React.Component {
       id: "cat-filter",
       categories: this.props.data.categories,
       onChange: this.handleFilterCat
+    }), React.createElement(Btn, {
+      id: "restack",
+      className: "above-btn",
+      txt: this.state.stackText,
+      handle: this.handleRestack
     })), this.state.theList);
   }
 
