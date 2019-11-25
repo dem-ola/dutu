@@ -22,8 +22,7 @@ module.exports = {
   },
 
   optimization: {
-		// We don't want a min version for this open source app
-		minimize: false
+		minimize: true
 	},
 
   output: {
