@@ -1,7 +1,7 @@
 'use strict';
 
 //////////////////////////////
-const fPrefix = 'data' // leave alone to not risk overwriting stored JSON
+const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
 //////////////////////////////
 
 export function retrieveDutu(defaultCategories, defaultCategory) {
