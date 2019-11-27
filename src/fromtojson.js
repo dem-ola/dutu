@@ -1,9 +1,24 @@
 'use strict';
 
-export function retrieveDutu(dataStore) {
+import {params} from './setup.js';
+
+var defaultCategories = params.defaultCategories;
+var defaultCategory = params.defaultCategory;
+
+export function newDutu() {
+    const data = { 
+        "me" : "My",
+        "categories": defaultCategories, // default
+        "tasks" : {},
+        "restack": false,
+      }
+    return data
+}
+
+export function retrieveDutu(store) {
     
     // get JSON file or return null
-    let obj = localStorage.getItem(dataStore+"JSON");
+    let obj = localStorage.getItem(store+"JSON");
     obj = (obj == null || obj == 'undefined') ? null : obj;
     if (obj == null) return obj
     
@@ -45,14 +60,65 @@ export function retrieveDutu(dataStore) {
     return obj;
 }
 
-export function saveDutu(dataStore, data, defaultCategory) {
-    // checks
-    //1. each task has a category; if not set to default
+export function saveDutu(store, data, defaultCategory) {
     let tasks = data.tasks;
     for (let t in tasks) {
         if (typeof tasks[t].category != 'string') {
             tasks[t].category = defaultCategory;
         }
     }
-    localStorage.setItem(dataStore+"JSON", JSON.stringify(data));
+    localStorage.setItem(store+"JSON", JSON.stringify(data));
+}
+
+export function archiveDutu(primary, archive, defaultCategory) {
+    
+    let reload = false;
+    
+    // load both live and existing stores
+    let live = retrieveDutu(primary);
+    let archived = retrieveDutu(archive);
+    if (!archived) { archived = newDutu(); }
+
+    // archive done tasks
+    let livetasks = live.tasks;
+    let archtasks = archived.tasks;
+    for (let t in livetasks) {
+        let task = livetasks[t]
+        if (task.done) {
+            reload = true;
+            // copy over if not already in archive
+            // taking care not to duplicate b/c if previously unarchived
+            if (!archtasks.hasOwnProperty(t)) {
+                archtasks[t] = task;
+            }
+            delete livetasks[t];
+        }
+    }
+    saveDutu(primary, live, defaultCategory);
+    saveDutu(archive, archived, defaultCategory);
+    return reload
+}
+
+export function unarchiveDutu(primary, archive, defaultCategory ) {
+
+    let reload = false;
+
+    // abort if no current archive
+    let archived = retrieveDutu(archive);
+    if (!archived) { return false }
+
+    let live = retrieveDutu(primary);
+
+    // add done tasks to live
+    let livetasks = live.tasks;
+    let archtasks = archived.tasks;
+    for (let t in archtasks) {
+        if (!livetasks.hasOwnProperty(t)) {
+            reload = true;
+            livetasks[t] = archtasks[t];
+        }
+    }
+    saveDutu(primary, live, defaultCategory);
+    saveDutu(archive, archived, defaultCategory);
+    return reload
 }

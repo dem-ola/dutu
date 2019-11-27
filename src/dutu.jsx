@@ -1,30 +1,25 @@
 'use strict';
 
 import {params} from './setup.js';
-import {retrieveDutu, saveDutu} from './fromtojson.js';
+import * as io from './fromtojson.js';
 
 const version = params.version;
 const primary = params.dataStore.primary;
 const archive = params.dataStore.archive;
+const defaultCategory = params.defaultCategory;
 
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
 var dutuData;
-var defaultCategories = ['All', 'General'];
-var defaultCategory = 'General';
 
 // retrieve
-dutuData = retrieveDutu(primary);
+dutuData = io.retrieveDutu(primary);
 if (dutuData == null) {
     // doesn't exist; make new blank and then open
-  dutuData = { 
-    "me" : "My",
-    "categories": defaultCategories, // default
-    "tasks" : {},
-    "restack": false,
-  }
-  saveDutu(primary, dutuData, defaultCategory);
-  retrieveDutu(primary);  
+  dutuData = io.newDutu()
+  io.saveDutu(primary, dutuData, defaultCategory);
+  dutuData = io.retrieveDutu(primary);  
 }
 
 function editClassName(elem, cname, action) {
@@ -233,7 +228,7 @@ class ToDoItem extends React.Component {
             this.props.data.tasks[this.state.key].done = false;
         }
         this.props.data.tasks[this.state.key].finished = finDate;
-        saveDutu(primary, this.props.data, defaultCategory);
+        io.saveDutu(primary, this.props.data, defaultCategory);
     }
 
     handleEdit(e) {
@@ -257,7 +252,7 @@ class ToDoItem extends React.Component {
                     // update data object, convert to JSON and save
                     this.setState({todo: inp.value});
                     this.props.data.tasks[this.state.key].task = inp.value;
-                    saveDutu(primary, this.props.data, defaultCategory);
+                    io.saveDutu(primary, this.props.data, defaultCategory);
                 } else {
                     inp.value = this.state.todo; // set back to former
                 }
@@ -297,7 +292,7 @@ class ToDoItem extends React.Component {
         let notes_written = par.querySelector('.item-notes').value;
         this.setState({notes: notes_written})
         this.props.data.tasks[this.state.key].notes = notes_written;
-        saveDutu(primary, this.props.data, defaultCategory);
+        io.saveDutu(primary, this.props.data, defaultCategory);
 
         // close box
         let notes = par.querySelector('.item-notes-wrap');
@@ -307,7 +302,7 @@ class ToDoItem extends React.Component {
     handleChangeCat() {
         let id_ = this.state.catId;
         this.props.data.tasks[this.state.key].category = document.querySelector('#'+id_).value;
-        saveDutu(primary, this.props.data, defaultCategory);
+        io.saveDutu(primary, this.props.data, defaultCategory);
     }
 
     render() {
@@ -448,6 +443,7 @@ const LoadList = (props) => {
             />
         )
     }
+
     return ( 
         <div>{rows}</div>
     );
@@ -516,11 +512,11 @@ class List extends React.Component {
             newKey = keys_.reduce((a,b)=>Math.max(a,b)) + 1;
         }
         this.props.data['tasks'][newKey] = newTask;
-        saveDutu(primary, this.props.data, defaultCategory);
+        io.saveDutu(primary, this.props.data, defaultCategory);
         
         // update shown list and keys
         keys_.push(newKey);
-        this.setState({keys: keys_, listorder: ++this.state.listorder});
+        this.setState({keys: keys_, listorder: this.state.listorder});
         this.componentDidUpdate();
 
         // reset input box
@@ -532,7 +528,7 @@ class List extends React.Component {
         let confirmed = confirm("Clear your entire list\nWarning: This action cannot be reversed");
         if (confirmed) {
             this.props.data['tasks'] = {}
-            saveDutu(primary, this.props.data, defaultCategory);
+            io.saveDutu(primary, this.props.data, defaultCategory);
             this.componentDidUpdate();
         }
     }
@@ -563,7 +559,7 @@ class List extends React.Component {
 
             // save new categories
             this.props.data.categories = newCats
-            saveDutu(primary, this.props.data, defaultCategory);
+            io.saveDutu(primary, this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -586,7 +582,7 @@ class List extends React.Component {
         let confirmed = confirm("Delete this task?");
         if (confirmed) {          
             delete this.props.data.tasks[key];
-            saveDutu(primary, this.props.data, defaultCategory);
+            io.saveDutu(primary, this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -599,22 +595,19 @@ class List extends React.Component {
             this.props.data.restack = true;
             e.target.textContent = 'Unstack';
         }
-        saveDutu(primary, this.props.data, defaultCategory);
+        io.saveDutu(primary, this.props.data, defaultCategory);
         this.componentDidUpdate(); // updates button text
         location.reload();
     }
 
     handleArchive(e) {
-
-        saveDutu(primary, this.props.data, defaultCategory);
-        this.componentDidUpdate(); // updates button text
-        location.reload();
+        let reload = io.archiveDutu(primary, archive, defaultCategory);
+        if (reload) location.reload();
     }
 
     handleUnArchive(e) {
-        saveDutu(primary, this.props.data, defaultCategory);
-        this.componentDidUpdate(); // updates button text
-        location.reload();
+        let reload = io.unarchiveDutu(primary, archive, defaultCategory);
+        if (reload) location.reload();
     }
        
     render() {
@@ -658,6 +651,19 @@ class List extends React.Component {
                         handle={this.handleRestack}
                     />
 
+                    <Btn 
+                        id='archive'
+                        className='above-btn'
+                        txt='Archive' 
+                        handle={this.handleArchive}
+                    />
+
+                    <Btn 
+                        id='unarchive'
+                        className='above-btn'
+                        txt='Unarchive' 
+                        handle={this.handleUnArchive}
+                    />
 
                 </div>
                 {this.state.theList}
