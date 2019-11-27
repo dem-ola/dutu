@@ -1,27 +1,13 @@
 'use strict';
 
-//////////////////////////////
-const fPrefix = 'dutu' // leave alone to not risk overwriting stored JSON
-//////////////////////////////
-
-export function retrieveDutu(defaultCategories, defaultCategory) {
+export function retrieveDutu(dataStore) {
+    
     // get JSON file or return null
-    let obj = localStorage.getItem(fPrefix+"JSON");
+    let obj = localStorage.getItem(dataStore+"JSON");
     obj = (obj == null || obj == 'undefined') ? null : obj;
     if (obj == null) return obj
     
     obj = JSON.parse(obj);
-    
-    // checks
-    let keys = Object.keys(obj);
-    // if no categories node; add default - 0.13
-    if (keys.indexOf('categories') == -1) {
-        obj['categories'] = defaultCategories;
-    }
-
-    if (keys.indexOf('restack') == -1) {
-        obj['restack'] = false;
-    }
 
     // if no orders node; create one - 0.14  
     // we always reset order on load in case things have changed
@@ -59,7 +45,7 @@ export function retrieveDutu(defaultCategories, defaultCategory) {
     return obj;
 }
 
-export function saveDutu(data, defaultCategory) {
+export function saveDutu(dataStore, data, defaultCategory) {
     // checks
     //1. each task has a category; if not set to default
     let tasks = data.tasks;
@@ -68,5 +54,5 @@ export function saveDutu(data, defaultCategory) {
             tasks[t].category = defaultCategory;
         }
     }
-    localStorage.setItem(fPrefix+"JSON", JSON.stringify(data));
+    localStorage.setItem(dataStore+"JSON", JSON.stringify(data));
 }
