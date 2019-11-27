@@ -1,5 +1,4 @@
 .DS_Store
-dist/dutu.js
 node_modules
 enhancements.txt
 dutu.code-workspace

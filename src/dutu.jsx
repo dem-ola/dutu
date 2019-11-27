@@ -1,8 +1,12 @@
 'use strict';
 
-import {retrieveDutu, saveDutu} from './fromtojson.jsx';
+import {params} from './setup.js';
+import {retrieveDutu, saveDutu} from './fromtojson.js';
 
-let version = 0.14
+const version = params.version;
+const primary = params.dataStore.primary;
+const archive = params.dataStore.archive;
+
 let months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 var dutuData;
@@ -10,16 +14,17 @@ var defaultCategories = ['All', 'General'];
 var defaultCategory = 'General';
 
 // retrieve
-dutuData = retrieveDutu(defaultCategories, defaultCategory);
+dutuData = retrieveDutu(primary);
 if (dutuData == null) {
     // doesn't exist; make new blank and then open
   dutuData = { 
     "me" : "My",
     "categories": defaultCategories, // default
-    "tasks" : {}
+    "tasks" : {},
+    "restack": false,
   }
-  saveDutu(dutuData, defaultCategory);
-  retrieveDutu(defaultCategories, defaultCategory);  
+  saveDutu(primary, dutuData, defaultCategory);
+  retrieveDutu(primary);  
 }
 
 function editClassName(elem, cname, action) {
@@ -228,7 +233,7 @@ class ToDoItem extends React.Component {
             this.props.data.tasks[this.state.key].done = false;
         }
         this.props.data.tasks[this.state.key].finished = finDate;
-        saveDutu(this.props.data, defaultCategory);
+        saveDutu(primary, this.props.data, defaultCategory);
     }
 
     handleEdit(e) {
@@ -252,7 +257,7 @@ class ToDoItem extends React.Component {
                     // update data object, convert to JSON and save
                     this.setState({todo: inp.value});
                     this.props.data.tasks[this.state.key].task = inp.value;
-                    saveDutu(this.props.data, defaultCategory);
+                    saveDutu(primary, this.props.data, defaultCategory);
                 } else {
                     inp.value = this.state.todo; // set back to former
                 }
@@ -292,7 +297,7 @@ class ToDoItem extends React.Component {
         let notes_written = par.querySelector('.item-notes').value;
         this.setState({notes: notes_written})
         this.props.data.tasks[this.state.key].notes = notes_written;
-        saveDutu(this.props.data, defaultCategory);
+        saveDutu(primary, this.props.data, defaultCategory);
 
         // close box
         let notes = par.querySelector('.item-notes-wrap');
@@ -302,7 +307,7 @@ class ToDoItem extends React.Component {
     handleChangeCat() {
         let id_ = this.state.catId;
         this.props.data.tasks[this.state.key].category = document.querySelector('#'+id_).value;
-        saveDutu(this.props.data, defaultCategory);
+        saveDutu(primary, this.props.data, defaultCategory);
     }
 
     render() {
@@ -457,6 +462,8 @@ class List extends React.Component {
         this.handleEditCat = this.handleEditCat.bind(this);
         this.handleFilterCat = this.handleFilterCat.bind(this);
         this.handleRestack = this.handleRestack.bind(this);
+        this.handleArchive = this.handleArchive.bind(this);
+        this.handleUnArchive = this.handleUnArchive.bind(this);
         this.state = {
             theList: <LoadList 
                         data={this.props.data}
@@ -509,7 +516,7 @@ class List extends React.Component {
             newKey = keys_.reduce((a,b)=>Math.max(a,b)) + 1;
         }
         this.props.data['tasks'][newKey] = newTask;
-        saveDutu(this.props.data, defaultCategory);
+        saveDutu(primary, this.props.data, defaultCategory);
         
         // update shown list and keys
         keys_.push(newKey);
@@ -525,7 +532,7 @@ class List extends React.Component {
         let confirmed = confirm("Clear your entire list\nWarning: This action cannot be reversed");
         if (confirmed) {
             this.props.data['tasks'] = {}
-            saveDutu(this.props.data, defaultCategory);
+            saveDutu(primary, this.props.data, defaultCategory);
             this.componentDidUpdate();
         }
     }
@@ -556,7 +563,7 @@ class List extends React.Component {
 
             // save new categories
             this.props.data.categories = newCats
-            saveDutu(this.props.data, defaultCategory);
+            saveDutu(primary, this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -579,7 +586,7 @@ class List extends React.Component {
         let confirmed = confirm("Delete this task?");
         if (confirmed) {          
             delete this.props.data.tasks[key];
-            saveDutu(this.props.data, defaultCategory);
+            saveDutu(primary, this.props.data, defaultCategory);
         }
         this.componentDidUpdate();
     }
@@ -592,7 +599,20 @@ class List extends React.Component {
             this.props.data.restack = true;
             e.target.textContent = 'Unstack';
         }
-        saveDutu(this.props.data, defaultCategory);
+        saveDutu(primary, this.props.data, defaultCategory);
+        this.componentDidUpdate(); // updates button text
+        location.reload();
+    }
+
+    handleArchive(e) {
+
+        saveDutu(primary, this.props.data, defaultCategory);
+        this.componentDidUpdate(); // updates button text
+        location.reload();
+    }
+
+    handleUnArchive(e) {
+        saveDutu(primary, this.props.data, defaultCategory);
         this.componentDidUpdate(); // updates button text
         location.reload();
     }
@@ -637,6 +657,7 @@ class List extends React.Component {
                         txt={this.state.stackText} 
                         handle={this.handleRestack}
                     />
+
 
                 </div>
                 {this.state.theList}
