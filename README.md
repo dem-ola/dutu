@@ -3,7 +3,7 @@ the lightweight todo app for big plans
 
 Dutu is a lightweight todo browser app written in React and native Javascript. Todo items are created in a straightforward GUI and saved to a JSON file stored in your browser's local storage.
 
-**Installation**
+## Installation
 1. Clone the repository OR
 
     You can copy the files from the 'dist' folder and point your browsr to the html file  OR 
@@ -16,7 +16,7 @@ Dutu is a lightweight todo browser app written in React and native Javascript. T
 2. IMPORTANT: Disable Cross-Origin restrictions
    In Safari you do this in the Develop menu
 
-**Use**\
+## Use
 Open the dutu.html file from your browser. The first time you open this you should see
 
    - An input box to add new items
@@ -40,8 +40,8 @@ Each todo item:
 
 There's no overall Save button: everything is saved as you go along.
 
-Future\
+## Future
 I have more ideas for Dutu and will add to it over time.
 
-Comments\
+## Comments
 All constructive ideas and comments welcome.
