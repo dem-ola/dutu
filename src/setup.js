@@ -4,7 +4,7 @@ export const params = {
     
     me: 'My', 
     
-    version: '0.15', // don't change except you want to get confused
+    version: '0.16', // don't change except you want to get confused
 
     dataStore: {
                 primary: 'dutu',

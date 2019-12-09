@@ -7,10 +7,11 @@ var defaultCategory = params.defaultCategory;
 
 export function newDutu() {
     const data = { 
-        "me" : "My",
+        "me" : params.me,
         "categories": defaultCategories, // default
         "tasks" : {},
         "restack": false,
+        "archive": false,
       }
     return data
 }
@@ -94,6 +95,7 @@ export function archiveDutu(primary, archive, defaultCategory) {
             delete livetasks[t];
         }
     }
+    live.archive = true;
     saveDutu(primary, live, defaultCategory);
     saveDutu(archive, archived, defaultCategory);
     return reload
@@ -118,6 +120,7 @@ export function unarchiveDutu(primary, archive, defaultCategory ) {
             livetasks[t] = archtasks[t];
         }
     }
+    live.archive = false;
     saveDutu(primary, live, defaultCategory);
     saveDutu(archive, archived, defaultCategory);
     return reload
