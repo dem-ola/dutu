@@ -24,9 +24,8 @@ Open the dutu.html file from your browser. The first time you open this you shou
    - Clear List         - will clear all the list. Warning! There's no Undo.
    - Edit Categories    - add/delete todo categories
    - Filter             - filter list by categories
-   - Restack            - re-order list placing Done items at bottom. Unstack to reverse
-   - Archive            - move all Done items to an archive JSON file
-   - Unarchive          - restore archive items to the list
+   - Re/Unstack            - re-order list placing Done items at bottom. Unstack to reverse
+   - Un/Archive            - move all Done items to an archive JSON file and vice versa
 
 Each todo item:
    - Notes              - opens box for notes. 'Save' or 'Close' without saving.

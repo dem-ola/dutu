@@ -459,7 +459,6 @@ class List extends React.Component {
         this.handleFilterCat = this.handleFilterCat.bind(this);
         this.handleRestack = this.handleRestack.bind(this);
         this.handleArchive = this.handleArchive.bind(this);
-        this.handleUnArchive = this.handleUnArchive.bind(this);
         this.state = {
             theList: <LoadList 
                         data={this.props.data}
@@ -467,7 +466,8 @@ class List extends React.Component {
             keys: Object.keys(props.data.tasks), // get keys so we can loop
             listorder: this.props.data.listorder,
             restack: this.props.data.restack,
-            stackText: this.props.data.restack ? 'Unstack' : 'Restack'
+            stackText: this.props.data.restack ? 'Unstack' : 'Restack',
+            archText: this.props.data.archive ? 'Unarchive' : 'Archive',
         }
     }
 
@@ -601,18 +601,20 @@ class List extends React.Component {
     }
 
     handleArchive(e) {
-        let reload = io.archiveDutu(primary, archive, defaultCategory);
-        if (reload) location.reload();
-    }
-
-    handleUnArchive(e) {
-        let reload = io.unarchiveDutu(primary, archive, defaultCategory);
+        let reload;
+        if (this.props.data.archive) {
+            this.props.data.archive = false;
+            reload = io.unarchiveDutu(primary, archive, defaultCategory);
+        } else {
+            this.props.data.archive = true;
+            reload = io.archiveDutu(primary, archive, defaultCategory);
+        }
         if (reload) location.reload();
     }
        
     render() {
         return (
-            <div>
+            <div id="todos">
                 <div id='above'>
                     <InputBox
                         id='item-box'
@@ -643,26 +645,21 @@ class List extends React.Component {
                         categories={this.props.data.categories} 
                         onChange={this.handleFilterCat}
                     />
-
+                
+                </div>
+                <div id="right">
                     <Btn 
                         id='restack'
-                        className='above-btn'
+                        className='right-btn'
                         txt={this.state.stackText} 
                         handle={this.handleRestack}
                     />
 
                     <Btn 
                         id='archive'
-                        className='above-btn'
-                        txt='Archive' 
+                        className='right-btn'
+                        txt={this.state.archText} 
                         handle={this.handleArchive}
-                    />
-
-                    <Btn 
-                        id='unarchive'
-                        className='above-btn'
-                        txt='Unarchive' 
-                        handle={this.handleUnArchive}
                     />
 
                 </div>
@@ -676,12 +673,16 @@ class ToDo extends React.Component {
     render() {
         return (
         <div>
-            <div id='app-name'>Dutu<span id='version'>{version}</span>
+            <div id='app-name-wrap'>
+                <span id="app-name">Dutu</span>
+                <span id='version'>{version}</span>
                 <span id='app-byline'>the todo app for big plans</span>
             </div>
-            <div id='me'> {this.props.data.me} Todo List </div>
-            <div id='table'>
-                 <List data={this.props.data} />
+            <div id="table-wrap">
+                <div id='table'>
+                    <List data={this.props.data} />
+                    <div id='right-wrap'></div>
+                </div>
             </div>
         </div>
         )
