@@ -490,9 +490,7 @@ class List extends React.Component {
     }
 
     showRows(action, tasks, input, re) {
-        console.log(tasks)
         for (let t in tasks) {
-            console.log(t)
             let task = tasks[t].task
             let elem = document.querySelector("#item-key-"+t)
             if (action=='filter') {
@@ -504,7 +502,7 @@ class List extends React.Component {
                     elem.style.display = 'Block'
                 }
             } else if (action=='add') {
-                if (elem) {
+                if (elem) { // the newest will be null as DOM not yet updated
                     elem.style.display = 'Block';
                 }
             }
@@ -513,7 +511,7 @@ class List extends React.Component {
 
     handleKeyUp(e) {
         let input = e.target.value;
-        var re = new RegExp(input);
+        var re = new RegExp(input, 'i');
         let tasks = this.state.theList.props.data.tasks;
         this.showRows('filter', tasks, input, re);
     }
