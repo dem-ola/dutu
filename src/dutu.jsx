@@ -71,6 +71,7 @@ const InputBox = props =>  {
             disabled={props.disabled}
             defaultValue={props.value}
             onChange={props.handle}
+            onKeyUp={props.onKeyUp}
         />
     )
 };
@@ -320,83 +321,86 @@ class ToDoItem extends React.Component {
 
         // categories for items: exclude 'All'
         let itemCategories = this.props.data.categories.slice(1,)
+        let key = "item-key-"+this.props.objKey
        
         return ( 
-            <div id={this.props.id} className={this.props.cname}>
-                <span className="item-id">
-                    {this.props.id.match(/\d+/)[0]}</span>
-               
-                <span className="item-obj-key">
-                    {this.props.objKey}</span>         
+            <div id={key}>
+                <div id={this.props.id} className={this.props.cname}>
+                    <span className="item-line">
+                        {this.props.id.match(/\d+/)[0]}</span>
                 
-                <div className='item-todo-box'>
-                    <InputBox
-                        className={boxcname}
-                        disabled={true}
-                        value={this.state.todo}
-                        done={this.state.done}
-                    />
-
-                    <Btn 
-                        className="item-notes-btn item-notes-btn-open" 
-                        txt='Notes' 
-                        handle={this.handleNotesOpen}
-                        disabled={disableBtn} />  
-
-                    <div className='item-notes-wrap'>
-                        <NotesBox 
-                            className="item-notes" 
-                            maxlength='500'
-                            placeholder={this.state.notesPlaceholder}
-                            value={this.state.notes}/>
-                        
+                    <span className="item-obj-key">
+                        {this.props.objKey}</span>   
+                                    
+                    <div className='item-todo-box'>
+                        <InputBox
+                            className={boxcname}
+                            disabled={true}
+                            value={this.state.todo}
+                            done={this.state.done} 
+                        />
                         <Btn 
-                            className="item-notes-btn item-notes-btn-save" 
-                            txt='Save' 
-                            handle={this.handleNotesSave} />  
+                            className="item-notes-btn item-notes-btn-open" 
+                            txt='Notes' 
+                            handle={this.handleNotesOpen}
+                            disabled={disableBtn} 
+                        />  
+                        <div className='item-notes-wrap'>
+                            <NotesBox 
+                                className="item-notes" 
+                                maxlength='500'
+                                placeholder={this.state.notesPlaceholder}
+                                value={this.state.notes}
+                            />
+                            <Btn 
+                                className="item-notes-btn item-notes-btn-save" 
+                                txt='Save' 
+                                handle={this.handleNotesSave}     
+                            />  
+                        </div>
                     </div>
+                    
+                    <Categories
+                        id={this.state.catId}
+                        className='item-category'
+                        categories={itemCategories}
+                        todoitem={true} // flag
+                        task={this.props.data.tasks[this.state.key]}
+                        data={this.props.data}
+                        onChange={this.handleChangeCat}
+                    />
+                    <Btn 
+                        className="item-edit" 
+                        txt='Edit' 
+                        handle={this.handleEdit}
+                        disabled={disableBtn} 
+                    />                
+                    <Btn 
+                        className="item-delete" 
+                        txt='Delete' 
+                        handle={this.props.handleDelete} 
+                    />
+                    <CheckBox 
+                        className="item-done"
+                        classNameLabel='item-done-label'
+                        handle={this.handleDone}
+                        checked={this.state.done} 
+                    /> 
+                    
+                    <span className="item-date">
+                        <span className='item-date-prefix'>add. </span>
+                        {this.state.added}
+                    </span>
+
+                    <span className="item-date">
+                        <span className='item-date-prefix'>{prefixFin} </span>
+                        {this.state.finished}
+                    </span>
+
+                    <span className="item-pending">=> {this.state.pending}</span>
+
                 </div>
-
-                <Categories
-                    id={this.state.catId}
-                    className='item-category'
-                    categories={itemCategories}
-                    todoitem={true} // flag
-                    task={this.props.data.tasks[this.state.key]}
-                    data={this.props.data}
-                    onChange={this.handleChangeCat}
-                />
-
-                <Btn 
-                    className="item-edit" 
-                    txt='Edit' 
-                    handle={this.handleEdit}
-                    disabled={disableBtn} />                
-                
-                <Btn 
-                    className="item-delete" 
-                    txt='Delete' 
-                    handle={this.props.handleDelete} />
-
-                <CheckBox 
-                    className="item-done"
-                    classNameLabel='item-done-label'
-                    handle={this.handleDone}
-                    checked={this.state.done} /> 
-                
-                <span className="item-date">
-                    <span className='item-date-prefix'>add. </span>
-                    {this.state.added}
-                </span>
-
-                <span className="item-date">
-                    <span className='item-date-prefix'>{prefixFin} </span>
-                    {this.state.finished}
-                </span>
-
-                <span className="item-pending">=> {this.state.pending}</span>
-
-            </div>
+            </div> 
         )
     }
 }
@@ -452,6 +456,7 @@ const LoadList = (props) => {
 class List extends React.Component {
     constructor(props) {
         super(props);
+        this.handleKeyUp = this.handleKeyUp.bind(this);
         this.handleAdd = this.handleAdd.bind(this);
         this.handleClear = this.handleClear.bind(this);
         this.handleDelete = this.handleDelete.bind(this);
@@ -459,6 +464,7 @@ class List extends React.Component {
         this.handleFilterCat = this.handleFilterCat.bind(this);
         this.handleRestack = this.handleRestack.bind(this);
         this.handleArchive = this.handleArchive.bind(this);
+        this.showRows = this.showRows.bind(this);
         this.state = {
             theList: <LoadList 
                         data={this.props.data}
@@ -481,6 +487,33 @@ class List extends React.Component {
                     handleDelete={this.handleDelete} />,
             })
         }
+    }
+
+    showRows(action, tasks, input, re) {
+        for (let t in tasks) {
+            let task = tasks[t].task
+            let elem = document.querySelector("#item-key-"+t)
+            if (action=='filter') {
+                let matched = re.exec(task)
+                if (!matched) {
+                    let elem = document.querySelector('#item-key-'+t)
+                    elem.style.display = 'None'
+                } else {
+                    elem.style.display = 'Block'
+                }
+            } else if (action=='add') {
+                if (elem) { // the newest will be null as DOM not yet updated
+                    elem.style.display = 'Block';
+                }
+            }
+        }
+    }
+
+    handleKeyUp(e) {
+        let input = e.target.value;
+        var re = new RegExp(input, 'i');
+        let tasks = this.state.theList.props.data.tasks;
+        this.showRows('filter', tasks, input, re);
     }
 
     handleAdd(e) {
@@ -517,7 +550,9 @@ class List extends React.Component {
         // update shown list and keys
         keys_.push(newKey);
         this.setState({keys: keys_, listorder: this.state.listorder});
+        this.showRows('add', this.props.data['tasks']);
         this.componentDidUpdate();
+
 
         // reset input box
         inp.value = '';     
@@ -619,6 +654,7 @@ class List extends React.Component {
                     <InputBox
                         id='item-box'
                         place='Add new todo item'
+                        onKeyUp={this.handleKeyUp}
                     />
                     <Btn 
                         id='add-new'
@@ -632,21 +668,19 @@ class List extends React.Component {
                         txt='Clear List' 
                         handle={this.handleClear}
                     />
-
                     <Btn 
                         id='cat-edit'
                         className='above-btn'
                         txt='Edit Categories' 
                         handle={this.handleEditCat}
                     />
-
                     <span id='cat-filter-label'>Filter:</span>
                     <Categories id='cat-filter' 
                         categories={this.props.data.categories} 
                         onChange={this.handleFilterCat}
                     />
-                
                 </div>
+
                 <div id="right">
                     <Btn 
                         id='restack'
@@ -654,14 +688,12 @@ class List extends React.Component {
                         txt={this.state.stackText} 
                         handle={this.handleRestack}
                     />
-
                     <Btn 
                         id='archive'
                         className='right-btn'
                         txt={this.state.archText} 
                         handle={this.handleArchive}
                     />
-
                 </div>
                 {this.state.theList}
             </div>
